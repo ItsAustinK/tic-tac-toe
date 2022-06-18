@@ -1,0 +1,1 @@
+This directory is meant to be used across backend multiple projects/microservices All systems should be generic. This directory could be its own git repo.

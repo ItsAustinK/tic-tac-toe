@@ -1,0 +1,1 @@
+This directory is meant to be the client Tic-Tac-Toe.

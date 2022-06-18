@@ -1,0 +1,36 @@
+package handler
+
+import (
+	"P2/backend/infrastructure/http"
+	"P2/backend/matchmaking/api"
+	"errors"
+	gohttp "net/http"
+)
+
+type MatchmakingHandler struct{}
+
+func (m MatchmakingHandler) GetPath() string {
+	return "/matchmake"
+}
+
+func (m MatchmakingHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
+	switch http.Method(r.Method) {
+	case http.POST: // login
+		id, err := http.GetQueryParameter(r, "id")
+		if err != nil {
+			http.WriteError(w, gohttp.StatusBadRequest, err)
+			return
+		}
+
+		ticket, err := api.QueueForMatch(r.Context(), id)
+		if err == nil {
+			http.WriteError(w, gohttp.StatusBadRequest, err)
+		}
+
+		http.WriteResponse(w, gohttp.StatusOK, ticket)
+
+	default:
+		http.WriteError(w, 404, errors.New("unsupported method type"))
+		return
+	}
+}

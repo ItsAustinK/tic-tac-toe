@@ -1,0 +1,79 @@
+package application
+
+import (
+	"P2/backend/matchmaking/database"
+	"P2/backend/matchmaking/database/repo"
+	"context"
+	"fmt"
+	"log"
+)
+
+type MatchmakerApp struct {
+	db    repo.TicketStorer
+	queue repo.TicketQueuer
+}
+
+func NewMatchmakerApp() MatchmakerApp {
+	return MatchmakerApp{
+		db:    repo.NewTicketDatabase(),
+		queue: repo.NewTicketQueue(),
+	}
+}
+
+func (m MatchmakerApp) QueueForMatch(ctx context.Context, id string) (*database.Ticket, error) {
+	ticket := database.NewTicket(id)
+
+	err := m.queue.QueueTicket(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.db.AddTicket(ctx, ticket)
+	if err != nil {
+		return nil, err
+	}
+
+	// check to see if a match is made
+	tickets, err := m.CheckForMatch(ctx)
+	if err != nil {
+		log.Print(fmt.Sprintf("something went wrong when checking for matches - err: %+v", err))
+	}
+
+	for i := range tickets {
+		if ticket.Id != tickets[i].Id {
+			ticket = *tickets[i]
+			break
+		}
+	}
+
+	return &ticket, nil
+}
+
+func (m MatchmakerApp) CheckForMatch(ctx context.Context) ([]*database.Ticket, error) {
+	ids, err := m.queue.CheckTickets(ctx, 2)
+	if err != nil {
+		return nil, err
+	}
+
+	// no match
+	if ids == nil {
+		return nil, err
+	}
+
+	tickets, err := m.db.GetTickets(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	// some bad happened. we should have received all tickets
+	if len(tickets) == len(ids) {
+		log.Print(fmt.Sprintf("something went wrong. we're missing some tickets for the match - err: %+v", err))
+	}
+
+	// update the tickets statuses
+	for i := range tickets {
+		tickets[i].SetCompletedStatus()
+	}
+
+	return tickets, nil
+}
