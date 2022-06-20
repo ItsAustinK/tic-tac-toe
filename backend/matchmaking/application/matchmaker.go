@@ -4,6 +4,7 @@ import (
 	"P2/backend/matchmaking/database"
 	"P2/backend/matchmaking/database/repo"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 )
@@ -21,6 +22,10 @@ func NewMatchmakerApp() MatchmakerApp {
 }
 
 func (m MatchmakerApp) QueueForMatch(ctx context.Context, id string) (*database.Ticket, error) {
+	if id == "" {
+		return nil, errors.New("invalid user id for queueing")
+	}
+
 	ticket := database.NewTicket(id)
 
 	err := m.queue.QueueTicket(ctx, id)

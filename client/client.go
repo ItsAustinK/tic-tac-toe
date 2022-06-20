@@ -1,6 +1,7 @@
 package main
 
 import (
+	"P2/client/ticket"
 	"P2/client/user"
 	"bufio"
 	"encoding/json"
@@ -14,6 +15,7 @@ import (
 )
 
 var curUser user.User
+var curTicket ticket.Ticket
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
@@ -47,6 +49,11 @@ func routeCommand(cmd string) {
 		id = strings.ReplaceAll(id, "\n", "")
 		id = strings.ReplaceAll(id, "\r", "")
 		err := userLogin(id)
+		if err != nil {
+			panic(err)
+		}
+	} else if strings.Contains(cmd, "-queue") {
+		err := queueForMatch()
 		if err != nil {
 			panic(err)
 		}
@@ -120,5 +127,34 @@ func userLogin(id string) error {
 	curUser = u
 
 	fmt.Println(fmt.Sprintf("successful login! \n%+v", curUser))
+	return nil
+}
+
+func queueForMatch() error {
+	req, err := http.NewRequest(http.MethodPost, "http://127.0.0.1:8080/matchmake", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	q := req.URL.Query()
+	q.Add("id", curUser.Id)
+	req.URL.RawQuery = q.Encode()
+
+	c := http.DefaultClient
+	r, err := c.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	var t ticket.Ticket
+	err = json.NewDecoder(r.Body).Decode(&t)
+	if err != nil {
+		return err
+	}
+	curTicket = t
+
+	fmt.Println(fmt.Sprintf("queued up! \n%+v", curUser))
 	return nil
 }

@@ -31,13 +31,12 @@ func (u UsersHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
 
 		http.WriteResponse(w, gohttp.StatusOK, user)
 	case http.POST: // login
-		fmt.Println("logging in")
-
 		id, err := http.GetQueryParameter(r, "id")
 		if err != nil {
 			http.WriteError(w, gohttp.StatusBadRequest, err)
 			return
 		}
+		fmt.Println(fmt.Sprintf("logging in user %s", id))
 
 		user, err := api.Login(r.Context(), id)
 		if err != nil {

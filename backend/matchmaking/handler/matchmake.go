@@ -4,6 +4,7 @@ import (
 	"P2/backend/infrastructure/http"
 	"P2/backend/matchmaking/api"
 	"errors"
+	"fmt"
 	gohttp "net/http"
 )
 
@@ -15,12 +16,13 @@ func (m MatchmakingHandler) GetPath() string {
 
 func (m MatchmakingHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
 	switch http.Method(r.Method) {
-	case http.POST: // login
+	case http.POST: // queue
 		id, err := http.GetQueryParameter(r, "id")
 		if err != nil {
 			http.WriteError(w, gohttp.StatusBadRequest, err)
 			return
 		}
+		fmt.Println(fmt.Sprintf("queuing user %s for match", id))
 
 		ticket, err := api.QueueForMatch(r.Context(), id)
 		if err == nil {
