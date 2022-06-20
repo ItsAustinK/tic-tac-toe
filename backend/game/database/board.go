@@ -35,3 +35,8 @@ func (b Board) AddAction(a Action) error {
 	b.Pieces[a.Position[0]][a.Position[1]] = a
 	return nil
 }
+
+func (b Board) IsBoardComplete() (string, bool) {
+
+	return "", false
+}

@@ -34,12 +34,11 @@ func RegisterHandler(handler Handler) {
 }
 
 func GetQueryParameter(r *gohttp.Request, key string) (string, error) {
-	p := r.URL.Query().Get(key)
-	if p == "" {
+	if !r.URL.Query().Has(key) {
 		return "", errors.New(fmt.Sprintf("query parameter '%s' is missing", key))
 	}
 
-	return p, nil
+	return r.URL.Query().Get(key), nil
 }
 
 func WriteResponse(w gohttp.ResponseWriter, code int, out interface{}) {

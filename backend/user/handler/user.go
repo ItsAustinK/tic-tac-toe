@@ -4,6 +4,7 @@ import (
 	"P2/backend/infrastructure/http"
 	"P2/backend/user/api"
 	"errors"
+	"fmt"
 	gohttp "net/http"
 )
 
@@ -30,6 +31,8 @@ func (u UsersHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
 
 		http.WriteResponse(w, gohttp.StatusOK, user)
 	case http.POST: // login
+		fmt.Println("logging in")
+
 		id, err := http.GetQueryParameter(r, "id")
 		if err != nil {
 			http.WriteError(w, gohttp.StatusBadRequest, err)
@@ -43,7 +46,6 @@ func (u UsersHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
 		}
 
 		http.WriteResponse(w, gohttp.StatusOK, user)
-
 	default:
 		http.WriteError(w, 404, errors.New("unsupported method type"))
 		return

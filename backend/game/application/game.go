@@ -39,10 +39,14 @@ func (g GameApp) UpdateGame(ctx context.Context, game database.Game) error {
 	return g.db.UpdateGame(ctx, game)
 }
 
-func (g GameApp) MakePlayerAction(ctx context.Context, id string, action database.Action) error {
+func (g GameApp) MakePlayerAction(ctx context.Context, id, token string, action database.Action) error {
 	game, err := g.GetGame(ctx, id)
 	if err != nil {
 		return err
+	}
+
+	if token != game.Token {
+		return errors.New("invalid game token - player is out of sync with game")
 	}
 
 	if !game.IsValidPlayer(action.PlayerId) {
@@ -68,4 +72,17 @@ func (g GameApp) MakePlayerAction(ctx context.Context, id string, action databas
 	}
 
 	return g.db.UpdateGame(ctx, *game)
+}
+
+func (g GameApp) GetGameStatus(ctx context.Context, id, token string) (*database.Game, error) {
+	game, err := g.GetGame(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if token == game.Token {
+		return nil, nil // no need to return updated game as they have latest
+	}
+
+	return game, nil
 }

@@ -30,7 +30,7 @@ func (g GamesHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
 		}
 
 		http.WriteResponse(w, gohttp.StatusOK, game)
-	case http.POST: // create a game - (not used)
+	case http.POST: // create a custom game - (not used)
 		var board api.Board
 		err := json.NewDecoder(r.Body).Decode(&board)
 		if err != nil {

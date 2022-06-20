@@ -28,7 +28,10 @@ func NewTicketDatabase() *TicketDatabase {
 }
 
 func (t *TicketDatabase) GetTicket(ctx context.Context, id string) (*database.Ticket, error) {
-	val := t.db[id]
+	val, ok := t.db[id]
+	if !ok {
+		return nil, nil
+	}
 	return &val, nil
 }
 

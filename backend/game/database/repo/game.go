@@ -27,7 +27,10 @@ func NewGameDatabase() *GameDatabase {
 }
 
 func (g *GameDatabase) GetGame(ctx context.Context, id string) (*database.Game, error) {
-	val := g.db[id]
+	val, ok := g.db[id]
+	if !ok {
+		return nil, nil
+	}
 	return &val, nil
 }
 

@@ -27,7 +27,10 @@ func NewStatsDatabase() *StatsDatabase {
 }
 
 func (s *StatsDatabase) GetStats(ctx context.Context, id string) (*database.Stats, error) {
-	val := s.db[id]
+	val, ok := s.db[id]
+	if !ok {
+		return nil, nil
+	}
 	return &val, nil
 }
 

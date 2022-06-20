@@ -36,24 +36,24 @@ func (u *User) FromDbItem(item database.User) {
 
 func GetUser(ctx context.Context, id string) (*User, error) {
 	app := application.NewUserApp()
-	g, err := app.GetUser(ctx, id)
+	u, err := app.GetUser(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	dto := &User{}
-	dto.FromDbItem(*g)
+	dto.FromDbItem(*u)
 	return dto, nil
 }
 
 func Login(ctx context.Context, id string) (*User, error) {
 	app := application.NewUserApp()
-	g, err := app.Login(ctx, id)
+	u, err := app.Login(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	dto := &User{}
-	dto.FromDbItem(*g)
+	dto.FromDbItem(*u)
 	return dto, nil
 }

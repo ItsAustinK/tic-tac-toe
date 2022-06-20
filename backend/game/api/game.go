@@ -7,10 +7,12 @@ import (
 )
 
 type Game struct {
-	Id      string
-	Board   Board
-	Players []Player
-	Actions []Action
+	Id          string
+	Token       string // updated every action
+	CurPlayerId string
+	Board       Board
+	Players     []Player
+	Actions     []Action
 }
 
 func (g Game) ToDbItem() database.Game {
@@ -34,6 +36,8 @@ func (g Game) ToDbItem() database.Game {
 
 func (g *Game) FromDbItem(item database.Game) {
 	g.Id = item.Id
+	g.Token = item.Token
+	g.CurPlayerId = item.Players[item.CurPlayerIdx].Id
 	g.Board.FromDbItem(item.Board)
 
 	g.Players = make([]Player, len(item.Players))
@@ -73,9 +77,21 @@ func CreateGame(ctx context.Context, board Board) (*Game, error) {
 	return dto, nil
 }
 
-func MakePlayerAction(ctx context.Context, id string, action Action) error {
+func MakePlayerAction(ctx context.Context, id, token string, action Action) error {
 	item := action.ToDbItem()
 
 	app := application.NewGameApp()
-	return app.MakePlayerAction(ctx, id, item)
+	return app.MakePlayerAction(ctx, id, token, item)
+}
+
+func GetGameStatus(ctx context.Context, id, token string) (*Game, error) {
+	app := application.NewGameApp()
+	g, err := app.GetGameStatus(ctx, id, token)
+	if err != nil {
+		return nil, err
+	}
+
+	dto := &Game{}
+	dto.FromDbItem(*g)
+	return dto, nil
 }

@@ -27,7 +27,10 @@ func NewUserDatabase() *UserDatabase {
 }
 
 func (u *UserDatabase) GetUser(ctx context.Context, id string) (*database.User, error) {
-	val := u.db[id]
+	val, ok := u.db[id]
+	if !ok {
+		return nil, nil
+	}
 	return &val, nil
 }
 
