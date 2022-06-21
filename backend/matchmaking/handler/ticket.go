@@ -15,22 +15,25 @@ func (u TicketHandler) GetPath() string {
 
 func (u TicketHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
 	switch http.Method(r.Method) {
-	case http.GET: // get a ticket
-		id, err := http.GetQueryParameter(r, "id")
-		if err != nil {
-			http.WriteError(w, gohttp.StatusBadRequest, err)
-			return
-		}
-
-		ticket, err := api.GetTicket(r.Context(), id)
-		if err != nil {
-			http.WriteError(w, gohttp.StatusBadRequest, err)
-		}
-
-		http.WriteResponse(w, gohttp.StatusOK, ticket)
-
+	case http.GET:
+		u.getTicket(w, r)
 	default:
 		http.WriteError(w, 404, errors.New("unsupported method type"))
 		return
 	}
+}
+
+func (u TicketHandler) getTicket(w gohttp.ResponseWriter, r *gohttp.Request) {
+	id, err := http.GetQueryParameter(r, "id")
+	if err != nil {
+		http.WriteError(w, gohttp.StatusBadRequest, err)
+		return
+	}
+
+	ticket, err := api.GetTicket(r.Context(), id)
+	if err != nil {
+		http.WriteError(w, gohttp.StatusBadRequest, err)
+	}
+
+	http.WriteResponse(w, gohttp.StatusOK, ticket)
 }
