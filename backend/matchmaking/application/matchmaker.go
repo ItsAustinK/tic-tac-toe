@@ -2,6 +2,7 @@ package application
 
 import (
 	"P2/backend/game/application"
+	gameDb "P2/backend/game/database"
 	"P2/backend/matchmaking/database"
 	"P2/backend/matchmaking/database/repo"
 	"context"
@@ -48,24 +49,30 @@ func (m MatchmakerApp) QueueForMatch(ctx context.Context, id string) (*database.
 	}
 
 	if tickets != nil {
-		// get the updated ticket
+		uids := make([]string, len(tickets))
 		for i := range tickets {
-			if ticket.Id != tickets[i].Id {
-				ticket = *tickets[i]
-				break
-			}
+			uids[i] = tickets[i].UserId
 		}
 
 		// create a game
-		g, err := m.gameApp.CreateGame(ctx, 3, 3, 3)
+		g, err := m.gameApp.CreateGame(ctx, 3, 3, 3, gameDb.Closed, uids)
 		if err != nil {
 			return nil, err
 		}
 
-		ticket.GameId = g.Id
-		err = m.db.UpdateTicket(ctx, ticket)
-		if err != nil {
-			return nil, err
+		// update all tickets
+		for i := range tickets {
+			tickets[i].GameId = g.Id
+			err = m.db.UpdateTicket(ctx, *tickets[i])
+			if err != nil {
+				return nil, err
+			}
+
+			// get the updated ticket to return
+			if ticket.Id != tickets[i].Id {
+				ticket = *tickets[i]
+			}
+
 		}
 	}
 

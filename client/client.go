@@ -13,9 +13,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -28,6 +30,15 @@ var gameTimer *time.Timer
 func main() {
 	fmt.Println("Tic Tac Toe - Shell")
 	fmt.Println("----------------------------------")
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-sigs
+		fmt.Println(fmt.Sprintf("\n\nExiting - signal: %s", sig))
+		os.Exit(0)
+	}()
 
 	// TODO: Read terminal in non-blocking way
 	for {
@@ -102,7 +113,7 @@ func routeCommand(cmd string) {
 	}
 }
 
-func readUserIds() (map[string]struct{}, error) {
+func readUserIds() (map[string]bool, error) {
 	fileName, err := filepath.Abs("client/storage/users.txt")
 	if err != nil {
 		return nil, err
@@ -117,7 +128,7 @@ func readUserIds() (map[string]struct{}, error) {
 		}
 	}
 
-	var ids map[string]struct{}
+	var ids map[string]bool
 	err = json.Unmarshal(u, &ids)
 	if err != nil {
 		return nil, err
@@ -126,7 +137,7 @@ func readUserIds() (map[string]struct{}, error) {
 	return ids, nil
 }
 
-func writeUserIds(ids map[string]struct{}) error {
+func writeUserIds(ids map[string]bool) error {
 	b, err := json.Marshal(ids)
 	if err != nil {
 		return err
@@ -151,8 +162,8 @@ func printUserIds() error {
 		return nil
 	}
 
-	for i := range ids {
-		fmt.Println(fmt.Sprintf("%d - %s", i, ids[i]))
+	for k, v := range ids {
+		fmt.Println(fmt.Sprintf("%s - in use? %t", k, v))
 	}
 
 	return nil
@@ -185,9 +196,9 @@ func userLogin(id string) error {
 
 	ids, err := readUserIds()
 	if ids == nil {
-		ids = map[string]struct{}{}
+		ids = map[string]bool{}
 	}
-	ids[id] = struct{}{}
+	ids[u.Id] = true
 
 	err = writeUserIds(ids)
 	if err != nil {
@@ -225,7 +236,7 @@ func queueForMatch() error {
 
 	go getTicketStatusLongPoll()
 
-	fmt.Println(fmt.Sprintf("queued up! \n%+v", curTicket))
+	fmt.Println(fmt.Sprintf("queued up! retrieved ticket \n%+v", curTicket))
 	return nil
 }
 
@@ -234,7 +245,7 @@ func getTicketStatusLongPoll() {
 		return
 	}
 
-	fmt.Println("long polling ticket status")
+	//fmt.Println("long polling ticket status")
 	ticketTimer = time.NewTimer(time.Second) // long poll - query every second
 	<-ticketTimer.C
 
@@ -245,7 +256,7 @@ func getTicketStatusLongPoll() {
 	}
 
 	if curTicket.Status == string(ticket.Complete) {
-		fmt.Println("stopping long polling - ticket status is complete!")
+		fmt.Println("stopping ticket long polling - ticket status is complete!")
 	} else {
 		go getTicketStatusLongPoll()
 	}
@@ -276,7 +287,7 @@ func getTicketStatus(id string) error {
 	}
 	curTicket = t
 
-	fmt.Println(fmt.Sprintf("retrieved ticket! \n%+v", curTicket))
+	//fmt.Println(fmt.Sprintf("retrieved ticket! \n%+v", curTicket))
 	return nil
 }
 
@@ -304,12 +315,13 @@ func joinGame(uid, gid string) error {
 	if err != nil {
 		return err
 	}
-	g.Init()
+
 	curGame = g
+	curGame.Init()
+	curGame.Render()
 
 	go getGameStatusLongPoll()
-
-	fmt.Println(fmt.Sprintf("retrieved ticket! \n%+v", curTicket))
+	fmt.Println(fmt.Sprintf("joined game! retrieved update game \n%+v", curGame))
 	return nil
 }
 
@@ -318,7 +330,7 @@ func getGameStatusLongPoll() {
 		return
 	}
 
-	fmt.Println("long polling game object")
+	//fmt.Println("long polling game object")
 	gameTimer = time.NewTimer(time.Second) // long poll - query every second
 	<-gameTimer.C
 
@@ -328,18 +340,11 @@ func getGameStatusLongPoll() {
 		return
 	}
 
-	// TODO: Once terminal input is non-blocking, implement time.Ticker into for loop & Game obj for individual tick rates
-	if curGame != nil {
-		curGame.Render()
+	if curGame.Status == string(game.Complete) {
+		fmt.Println("stopping game long polling -game is complete!")
+	} else {
+		go getGameStatusLongPoll()
 	}
-
-	go getGameStatusLongPoll()
-
-	//if curGame.Status == string(game.Complete) {
-	//	fmt.Println("stopping game - game is complete")
-	//} else {
-	//	go getGameStatusLongPoll()
-	//}
 }
 
 func getGame(id string) error {
@@ -365,9 +370,22 @@ func getGame(id string) error {
 	if err != nil {
 		return err
 	}
-	curGame = g
 
-	fmt.Println(fmt.Sprintf("retrieved ticket! \n%+v", curTicket))
+	// TODO: Once terminal input is non-blocking, implement time.Ticker into for loop & Game obj for individual tick rates
+	var render bool
+	if curGame != nil {
+		if curGame.Token != g.Token { // check for delta in game object
+			render = true
+		}
+	} else {
+		render = true // render new obj
+	}
+	curGame = g
+	if render {
+		curGame.Render()
+	}
+
+	//fmt.Println(fmt.Sprintf("retrieved game! \n%+v", curGame))
 	return nil
 }
 
@@ -413,6 +431,6 @@ func makeBoardAction(id, token string, location int) error {
 		curGame.Render()
 	}
 
-	fmt.Println(fmt.Sprintf("retrieved ticket! \n%+v", curTicket))
+	fmt.Println(fmt.Sprintf("made action! retrieved updated game \n%+v", curGame))
 	return nil
 }

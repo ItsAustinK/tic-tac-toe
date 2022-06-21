@@ -33,9 +33,9 @@ func (g GameApp) GetGame(ctx context.Context, id string) (*database.Game, error)
 	return game, nil
 }
 
-func (g GameApp) CreateGame(ctx context.Context, r, c, k int) (*database.Game, error) {
+func (g GameApp) CreateGame(ctx context.Context, r, c, k int, p database.Presence, uids []string) (*database.Game, error) {
 	board := database.NewBoard(r, c, k)
-	game := database.NewGame(board)
+	game := database.NewGame(board, p, uids)
 	return &game, g.db.AddGame(ctx, game)
 }
 
@@ -73,39 +73,39 @@ func (g GameApp) UpdateGame(ctx context.Context, game database.Game) error {
 	return g.db.UpdateGame(ctx, game)
 }
 
-func (g GameApp) MakePlayerAction(ctx context.Context, id, token string, action database.Action) error {
+func (g GameApp) MakePlayerAction(ctx context.Context, id, token string, action database.Action) (*database.Game, error) {
 	game, err := g.GetGame(ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if token != game.Token {
-		return errors.New("invalid game token - player is out of sync with game")
+		return nil, errors.New("invalid game token - player is out of sync with game")
 	}
 
 	if !game.IsValidPlayer(action.PlayerId) {
-		return errors.New("invalid action - player is not a part of the game")
+		return nil, errors.New("invalid action - player is not a part of the game")
 	}
 
 	if !game.IsPlayersTurn(action.PlayerId) {
-		return errors.New("invalid action - not player's turn")
+		return nil, errors.New("invalid action - not player's turn")
 	}
 
 	if !game.Board.IsPieceAvailable(action.Position) {
-		return errors.New("invalid action - board piece not available")
+		return nil, errors.New("invalid action - board piece not available")
 	}
 
 	err = game.AddPlayerAction(action)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = game.Board.AddAction(action)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return g.db.UpdateGame(ctx, *game)
+	return game, g.db.UpdateGame(ctx, *game)
 }
 
 func (g GameApp) GetGameStatus(ctx context.Context, id, token string) (*database.Game, error) {

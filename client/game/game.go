@@ -4,10 +4,29 @@ import (
 	"fmt"
 )
 
+type Presence string
+
+const (
+	Open   Presence = "open"
+	Closed Presence = "closed"
+	Invite Presence = "invite"
+)
+
+type Status string
+
+const (
+	Initializing Status = "initializing"
+	InProgress   Status = "in_progress"
+	Complete     Status = "complete"
+)
+
 type Game struct {
 	Id          string
 	Token       string // updated every action
 	CurPlayerId string
+	WinnerId    string
+	Presence    string
+	Status      string
 	Board       Board
 	Players     []Player // this isn't necessary - could have better json unmarshalling to control what client models look like
 	Actions     []Action

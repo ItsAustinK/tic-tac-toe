@@ -44,7 +44,7 @@ func (a ActionsHandler) makeBoardAction(w gohttp.ResponseWriter, r *gohttp.Reque
 		return
 	}
 
-	err = api.MakePlayerAction(r.Context(), id, token, action)
+	game, err := api.MakePlayerAction(r.Context(), id, token, action)
 	if err != nil {
 		http.WriteError(w, gohttp.StatusBadRequest, err)
 		return
@@ -52,5 +52,5 @@ func (a ActionsHandler) makeBoardAction(w gohttp.ResponseWriter, r *gohttp.Reque
 
 	// TODO: handle if this was a winning action? This should be a long poll or websocket action
 
-	http.WriteResponse(w, gohttp.StatusOK, nil)
+	http.WriteResponse(w, gohttp.StatusOK, game)
 }

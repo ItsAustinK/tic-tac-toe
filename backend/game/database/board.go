@@ -13,6 +13,8 @@ type Board struct {
 
 func NewBoard(r, c, k int) Board {
 	b := Board{
+		Row:  r,
+		Col:  c,
 		KVal: k,
 	}
 

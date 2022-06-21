@@ -10,6 +10,9 @@ type Game struct {
 	Id          string
 	Token       string // updated every action
 	CurPlayerId string
+	WinnerId    string
+	Presence    string
+	Status      string
 	Board       Board
 	Players     []Player
 	Actions     []Action
@@ -23,6 +26,14 @@ func (g Game) ToDbItem() database.Game {
 
 	item.Players = make([]database.Player, len(g.Players))
 	for i := range g.Players {
+		if g.CurPlayerId == g.Players[i].Id {
+			item.CurPlayerIdx = i
+		}
+
+		if g.WinnerId == g.Players[i].Id {
+			item.WinnerIdx = i
+		}
+
 		item.Players[i] = g.Players[i].ToDbItem()
 	}
 
@@ -38,7 +49,13 @@ func (g *Game) FromDbItem(item database.Game) {
 	g.Id = item.Id
 	g.Token = item.Token
 	g.CurPlayerId = item.Players[item.CurPlayerIdx].Id
+	g.Presence = string(item.Presence)
+	g.Status = string(item.Status)
 	g.Board.FromDbItem(item.Board)
+
+	if item.WinnerIdx != -1 {
+		g.WinnerId = item.Players[item.WinnerIdx].Id
+	}
 
 	g.Players = make([]Player, len(item.Players))
 	for i := range item.Players {
@@ -65,7 +82,7 @@ func GetGame(ctx context.Context, id string) (*Game, error) {
 
 func CreateGame(ctx context.Context, r, c, k int) (*Game, error) {
 	app := application.NewGameApp()
-	g, err := app.CreateGame(ctx, r, c, k)
+	g, err := app.CreateGame(ctx, r, c, k, database.Invite, nil) // TODO: allow presence type to be provided & add creator as player
 	if err != nil {
 		return nil, err
 	}
@@ -87,11 +104,18 @@ func JoinGame(ctx context.Context, uid, gid string) (*Game, error) {
 	return dto, nil
 }
 
-func MakePlayerAction(ctx context.Context, id, token string, action Action) error {
+func MakePlayerAction(ctx context.Context, id, token string, action Action) (*Game, error) {
 	item := action.ToDbItem()
 
 	app := application.NewGameApp()
-	return app.MakePlayerAction(ctx, id, token, item)
+	g, err := app.MakePlayerAction(ctx, id, token, item)
+	if err != nil {
+		return nil, err
+	}
+
+	dto := &Game{}
+	dto.FromDbItem(*g)
+	return dto, nil
 }
 
 func GetGameStatus(ctx context.Context, id, token string) (*Game, error) {
