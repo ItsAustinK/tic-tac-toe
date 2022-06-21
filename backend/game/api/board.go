@@ -3,12 +3,16 @@ package api
 import "P2/backend/game/database"
 
 type Board struct {
-	KVal   int // num items in a row to win
 	Pieces [][]Action
+	Row    int
+	Col    int
+	KVal   int // num items in a row to win
 }
 
 func (b Board) ToDbItem() database.Board {
 	item := database.Board{
+		Row:  b.Row,
+		Col:  b.Col,
 		KVal: b.KVal,
 	}
 
@@ -25,6 +29,8 @@ func (b Board) ToDbItem() database.Board {
 }
 
 func (b *Board) FromDbItem(item database.Board) {
+	b.Row = item.Row
+	b.Col = item.Col
 	b.KVal = item.KVal
 
 	// TODO: look into optimizing

@@ -5,6 +5,7 @@ import (
 	"P2/client/ticket"
 	"P2/client/user"
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -75,6 +77,25 @@ func routeCommand(cmd string) {
 		}
 	} else if strings.Contains(cmd, "-join") {
 		err := joinGame(curUser.Id, curTicket.GameId)
+		if err != nil {
+			panic(err)
+		}
+	} else if strings.Contains(cmd, "-action") {
+		split := strings.Split(cmd, "=")
+		if len(split) < 2 {
+			fmt.Println("invalid login cmd")
+			return
+		}
+
+		id := split[1]
+		id = strings.ReplaceAll(id, "\n", "")
+		id = strings.ReplaceAll(id, "\r", "")
+		loc, err := strconv.Atoi(id)
+		if err != nil {
+			panic(err)
+		}
+
+		err = makeBoardAction(curGame.Id, curGame.Token, loc)
 		if err != nil {
 			panic(err)
 		}
@@ -312,6 +333,8 @@ func getGameStatusLongPoll() {
 		curGame.Render()
 	}
 
+	go getGameStatusLongPoll()
+
 	//if curGame.Status == string(game.Complete) {
 	//	fmt.Println("stopping game - game is complete")
 	//} else {
@@ -343,6 +366,52 @@ func getGame(id string) error {
 		return err
 	}
 	curGame = g
+
+	fmt.Println(fmt.Sprintf("retrieved ticket! \n%+v", curTicket))
+	return nil
+}
+
+func makeBoardAction(id, token string, location int) error {
+	row := location % curGame.Board.Row
+	col := location / curGame.Board.Col
+	a := game.Action{
+		PlayerId: id,
+		Position: [2]int{row, col},
+	}
+
+	b, err := json.Marshal(a)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, "http://127.0.0.1:8080/actions", bytes.NewBuffer(b))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	q := req.URL.Query()
+	q.Add("id", id)
+	q.Add("token", token)
+	req.URL.RawQuery = q.Encode()
+
+	c := http.DefaultClient
+	r, err := c.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	var g *game.Game
+	err = json.NewDecoder(r.Body).Decode(&g)
+	if err != nil {
+		return err
+	}
+	curGame = g
+
+	if curGame != nil {
+		curGame.Render()
+	}
 
 	fmt.Println(fmt.Sprintf("retrieved ticket! \n%+v", curTicket))
 	return nil
