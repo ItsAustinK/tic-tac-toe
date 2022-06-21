@@ -1,6 +1,7 @@
 package main
 
 import (
+	"P2/client/game"
 	"P2/client/ticket"
 	"P2/client/user"
 	"bufio"
@@ -13,24 +14,33 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
-var curUser user.User
-var curTicket ticket.Ticket
+var curUser *user.User
+var curTicket *ticket.Ticket
+var curGame *game.Game
+var ticketTimer *time.Timer
+var gameTimer *time.Timer
 
 func main() {
-	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("Tic Tac Toe - Shell")
 	fmt.Println("----------------------------------")
 
+	// TODO: Read terminal in non-blocking way
 	for {
-		fmt.Print("-> ")
-		text, _ := reader.ReadString('\n')
-		// convert CRLF to LF
-		text = strings.Replace(text, "\n", "", -1)
-
-		routeCommand(text)
+		readTerminalInput()
 	}
+}
+
+func readTerminalInput() {
+	fmt.Print("-> ")
+	reader := bufio.NewReader(os.Stdin)
+	text, _ := reader.ReadString('\n')
+	// convert CRLF to LF
+	text = strings.Replace(text, "\n", "", -1)
+
+	routeCommand(text)
 }
 
 func routeCommand(cmd string) {
@@ -55,6 +65,16 @@ func routeCommand(cmd string) {
 		}
 	} else if strings.Contains(cmd, "-queue") {
 		err := queueForMatch()
+		if err != nil {
+			panic(err)
+		}
+	} else if strings.Contains(cmd, "-game") {
+		err := getGame(curTicket.GameId)
+		if err != nil {
+			panic(err)
+		}
+	} else if strings.Contains(cmd, "-join") {
+		err := joinGame(curUser.Id, curTicket.GameId)
 		if err != nil {
 			panic(err)
 		}
@@ -135,7 +155,7 @@ func userLogin(id string) error {
 	}
 	defer r.Body.Close()
 
-	var u user.User
+	var u *user.User
 	err = json.NewDecoder(r.Body).Decode(&u)
 	if err != nil {
 		return err
@@ -175,13 +195,155 @@ func queueForMatch() error {
 	}
 	defer r.Body.Close()
 
-	var t ticket.Ticket
+	var t *ticket.Ticket
 	err = json.NewDecoder(r.Body).Decode(&t)
 	if err != nil {
 		return err
 	}
 	curTicket = t
 
+	go getTicketStatusLongPoll()
+
 	fmt.Println(fmt.Sprintf("queued up! \n%+v", curTicket))
+	return nil
+}
+
+func getTicketStatusLongPoll() {
+	if curTicket == nil {
+		return
+	}
+
+	fmt.Println("long polling ticket status")
+	ticketTimer = time.NewTimer(time.Second) // long poll - query every second
+	<-ticketTimer.C
+
+	err := getTicketStatus(curTicket.Id)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("failed to get ticket status- %s", err.Error()))
+		return
+	}
+
+	if curTicket.Status == string(ticket.Complete) {
+		fmt.Println("stopping long polling - ticket status is complete!")
+	} else {
+		go getTicketStatusLongPoll()
+	}
+}
+
+func getTicketStatus(id string) error {
+	req, err := http.NewRequest(http.MethodGet, "http://127.0.0.1:8080/tickets", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	q := req.URL.Query()
+	q.Add("id", id)
+	req.URL.RawQuery = q.Encode()
+
+	c := http.DefaultClient
+	r, err := c.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	var t *ticket.Ticket
+	err = json.NewDecoder(r.Body).Decode(&t)
+	if err != nil {
+		return err
+	}
+	curTicket = t
+
+	fmt.Println(fmt.Sprintf("retrieved ticket! \n%+v", curTicket))
+	return nil
+}
+
+func joinGame(uid, gid string) error {
+	req, err := http.NewRequest(http.MethodPut, "http://127.0.0.1:8080/games", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	q := req.URL.Query()
+	q.Add("uid", uid)
+	q.Add("gid", gid)
+	req.URL.RawQuery = q.Encode()
+
+	c := http.DefaultClient
+	r, err := c.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	var g *game.Game
+	err = json.NewDecoder(r.Body).Decode(&g)
+	if err != nil {
+		return err
+	}
+	g.Init()
+	curGame = g
+
+	go getGameStatusLongPoll()
+
+	fmt.Println(fmt.Sprintf("retrieved ticket! \n%+v", curTicket))
+	return nil
+}
+
+func getGameStatusLongPoll() {
+	if curGame == nil {
+		return
+	}
+
+	fmt.Println("long polling game object")
+	gameTimer = time.NewTimer(time.Second) // long poll - query every second
+	<-gameTimer.C
+
+	err := getGame(curGame.Id)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("failed to get game object- %s", err.Error()))
+		return
+	}
+
+	// TODO: Once terminal input is non-blocking, implement time.Ticker into for loop & Game obj for individual tick rates
+	if curGame != nil {
+		curGame.Render()
+	}
+
+	//if curGame.Status == string(game.Complete) {
+	//	fmt.Println("stopping game - game is complete")
+	//} else {
+	//	go getGameStatusLongPoll()
+	//}
+}
+
+func getGame(id string) error {
+	req, err := http.NewRequest(http.MethodGet, "http://127.0.0.1:8080/games", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	q := req.URL.Query()
+	q.Add("id", id)
+	req.URL.RawQuery = q.Encode()
+
+	c := http.DefaultClient
+	r, err := c.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	var g *game.Game
+	err = json.NewDecoder(r.Body).Decode(&g)
+	if err != nil {
+		return err
+	}
+	curGame = g
+
+	fmt.Println(fmt.Sprintf("retrieved ticket! \n%+v", curTicket))
 	return nil
 }

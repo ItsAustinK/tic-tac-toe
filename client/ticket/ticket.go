@@ -1,5 +1,12 @@
 package ticket
 
+type Status string
+
+const (
+	Searching Status = "Searching"
+	Complete  Status = "Completed"
+)
+
 type Ticket struct {
 	Id            string
 	UserId        string
