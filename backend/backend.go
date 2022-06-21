@@ -38,7 +38,7 @@ func registerGameHandlers() {
 	mh := matchmaking.MatchmakingHandler{}
 	http.RegisterHandler(mh)
 
-	th := matchmaking.TickerHandler{}
+	th := matchmaking.TicketHandler{}
 	http.RegisterHandler(th)
 
 	// user

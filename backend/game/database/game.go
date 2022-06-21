@@ -18,8 +18,10 @@ type Game struct {
 func NewGame(b Board) Game {
 	nid, _ := gonanoid.Nanoid(16)
 	return Game{
-		Id:    nid,
-		Board: b,
+		Id:      nid,
+		Board:   b,
+		Players: []Player{},
+		Actions: []Action{},
 	}
 }
 
@@ -36,6 +38,14 @@ func (g Game) IsValidPlayer(id string) bool {
 func (g Game) IsPlayersTurn(id string) bool {
 	p := g.Players[g.CurPlayerIdx]
 	return id == p.Id
+}
+
+func (g *Game) AddPlayer(p Player) {
+	if g.IsValidPlayer(p.Id) {
+		return
+	}
+
+	g.Players = append(g.Players, p)
 }
 
 func (g *Game) AddPlayerAction(a Action) error {

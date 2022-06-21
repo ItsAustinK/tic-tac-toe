@@ -3,17 +3,20 @@ package application
 import (
 	"P2/backend/game/database"
 	"P2/backend/game/database/repo"
+	"P2/backend/user/application"
 	"context"
 	"errors"
 )
 
 type GameApp struct {
-	db repo.GameStorer
+	db      repo.GameStorer
+	userApp application.UserApp
 }
 
 func NewGameApp() GameApp {
 	return GameApp{
-		db: repo.NewGameDatabase(),
+		db:      repo.NewGameDatabase(),
+		userApp: application.NewUserApp(),
 	}
 }
 
@@ -34,6 +37,36 @@ func (g GameApp) CreateGame(ctx context.Context, r, c, k int) (*database.Game, e
 	board := database.NewBoard(r, c, k)
 	game := database.NewGame(board)
 	return &game, g.db.AddGame(ctx, game)
+}
+
+func (g GameApp) JoinGame(ctx context.Context, uid, gid string) (*database.Game, error) {
+	game, err := g.db.GetGame(ctx, gid)
+	if err != nil {
+		return nil, err
+	}
+
+	if game == nil {
+		return nil, errors.New("failed to find game db item")
+	}
+
+	user, err := g.userApp.GetUser(ctx, uid)
+	if err != nil {
+		return nil, err
+
+	}
+
+	if user == nil {
+		return nil, errors.New("failed to find user db item")
+	}
+
+	p := database.NewPlayer(user.Id, user.Name)
+	game.AddPlayer(p)
+	err = g.UpdateGame(ctx, *game)
+	if err != nil {
+		return nil, err
+	}
+
+	return game, nil
 }
 
 func (g GameApp) UpdateGame(ctx context.Context, game database.Game) error {

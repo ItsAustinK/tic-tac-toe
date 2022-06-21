@@ -75,6 +75,18 @@ func CreateGame(ctx context.Context, r, c, k int) (*Game, error) {
 	return dto, nil
 }
 
+func JoinGame(ctx context.Context, uid, gid string) (*Game, error) {
+	app := application.NewGameApp()
+	g, err := app.JoinGame(ctx, uid, gid)
+	if err != nil {
+		return nil, err
+	}
+
+	dto := &Game{}
+	dto.FromDbItem(*g)
+	return dto, nil
+}
+
 func MakePlayerAction(ctx context.Context, id, token string, action Action) error {
 	item := action.ToDbItem()
 

@@ -31,7 +31,7 @@ func (m MatchmakerApp) QueueForMatch(ctx context.Context, id string) (*database.
 
 	ticket := database.NewTicket(id)
 
-	err := m.queue.QueueTicket(ctx, id)
+	err := m.queue.QueueTicket(ctx, ticket.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +89,8 @@ func (m MatchmakerApp) CheckForMatch(ctx context.Context) ([]*database.Ticket, e
 	}
 
 	// some bad happened. we should have received all tickets
-	if len(tickets) == len(ids) {
-		log.Print(fmt.Sprintf("something went wrong. we're missing some tickets for the match - err: %+v", err))
+	if len(tickets) != len(ids) {
+		log.Print(fmt.Sprintf("something went wrong. we're missing some tickets for the match"))
 	}
 
 	// update the tickets statuses

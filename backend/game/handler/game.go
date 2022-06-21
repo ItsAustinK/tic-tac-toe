@@ -30,7 +30,7 @@ func (g GamesHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
 		}
 
 		http.WriteResponse(w, gohttp.StatusOK, game)
-	case http.POST: // create a custom game - (not used)
+	case http.POST: // create a custom game - (not used at the moment)
 		sRow, err := http.GetQueryParameter(r, "r")
 		if err != nil {
 			http.WriteError(w, gohttp.StatusBadRequest, err)
@@ -71,7 +71,25 @@ func (g GamesHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
 		}
 
 		http.WriteResponse(w, gohttp.StatusOK, ng)
+	case http.PUT: // join a game
+		uid, err := http.GetQueryParameter(r, "uid")
+		if err != nil {
+			http.WriteError(w, gohttp.StatusBadRequest, err)
+			return
+		}
+		gid, err := http.GetQueryParameter(r, "gid")
+		if err != nil {
+			http.WriteError(w, gohttp.StatusBadRequest, err)
+			return
+		}
 
+		game, err := api.JoinGame(r.Context(), uid, gid)
+		if err != nil {
+			http.WriteError(w, gohttp.StatusBadRequest, err)
+			return
+		}
+
+		http.WriteResponse(w, gohttp.StatusOK, game)
 	default:
 		http.WriteError(w, 404, errors.New("unsupported method type"))
 		return

@@ -7,13 +7,13 @@ import (
 	gohttp "net/http"
 )
 
-type TickerHandler struct{}
+type TicketHandler struct{}
 
-func (u TickerHandler) GetPath() string {
+func (u TicketHandler) GetPath() string {
 	return "/tickets"
 }
 
-func (u TickerHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
+func (u TicketHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
 	switch http.Method(r.Method) {
 	case http.GET: // get a ticket
 		id, err := http.GetQueryParameter(r, "id")
