@@ -25,7 +25,11 @@ func (g *Game) Init() {
 func (g Game) Render() {
 	for i := range g.Board.Pieces {
 		for j := range g.Board.Pieces[i] {
-			fmt.Print(g.PlayersMap[g.Board.Pieces[i][j].PlayerId].Name)
+			if g.PlayersMap[g.Board.Pieces[i][j].PlayerId].Id == "" { // empty piece
+				fmt.Print(fmt.Sprintf("[%d]", i*len(g.Board.Pieces[i])+j))
+			} else {
+				fmt.Print(g.PlayersMap[g.Board.Pieces[i][j].PlayerId].Icon)
+			}
 		}
 		fmt.Print("\n")
 	}

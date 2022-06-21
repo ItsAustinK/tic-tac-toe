@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	gonanoid "github.com/matoous/go-nanoid"
+	"math/rand"
 )
 
 type Game struct {
@@ -45,6 +46,18 @@ func (g *Game) AddPlayer(p Player) {
 		return
 	}
 
+	var randChar rune
+	for {
+		randChar = 'A' + rune(rand.Intn(26))
+		for i := range g.Players {
+			if string(randChar) == g.Players[i].Icon {
+				break
+			}
+		}
+		break
+	}
+
+	p.Icon = string(randChar)
 	g.Players = append(g.Players, p)
 }
 
