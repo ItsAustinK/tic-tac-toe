@@ -25,7 +25,7 @@ func (m MatchmakingHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request
 		fmt.Println(fmt.Sprintf("queuing user %s for match", id))
 
 		ticket, err := api.QueueForMatch(r.Context(), id)
-		if err == nil {
+		if err != nil {
 			http.WriteError(w, gohttp.StatusBadRequest, err)
 		}
 

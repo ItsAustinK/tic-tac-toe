@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -60,37 +61,52 @@ func routeCommand(cmd string) {
 	}
 }
 
-func printUserIds() error {
+func readUserIds() (map[string]struct{}, error) {
+	fileName, err := filepath.Abs("client/storage/users.txt")
+	if err != nil {
+		return nil, err
+	}
+
+	u, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	var ids map[string]struct{}
+	err = json.Unmarshal(u, &ids)
+	if err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
+func writeUserIds(ids map[string]struct{}) error {
+	b, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+
 	fileName, err := filepath.Abs("client/storage/users.txt")
 	if err != nil {
 		return err
 	}
 
-	//_, err := os.Stat(fileName)
-	//if err != nil {
-	//	if !errors.Is(err, os.ErrNotExist) {
-	//		return err
-	//	}
-	//}
+	return ioutil.WriteFile(fileName, b, fs.ModePerm)
+}
 
-	u, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			fmt.Println("no saved users.")
-			return nil
-		} else {
-			return err
-		}
-	}
-
-	var ids []string
-	err = json.Unmarshal(u, &ids)
+func printUserIds() error {
+	ids, err := readUserIds()
 	if err != nil {
 		return err
 	}
 
 	if len(ids) == 0 {
-		fmt.Println("no saved users.")
+		fmt.Println("no saved users")
 		return nil
 	}
 
@@ -126,6 +142,17 @@ func userLogin(id string) error {
 	}
 	curUser = u
 
+	ids, err := readUserIds()
+	if ids == nil {
+		ids = map[string]struct{}{}
+	}
+	ids[id] = struct{}{}
+
+	err = writeUserIds(ids)
+	if err != nil {
+		fmt.Println("failed to write user ids to local storage")
+	}
+
 	fmt.Println(fmt.Sprintf("successful login! \n%+v", curUser))
 	return nil
 }
@@ -155,6 +182,6 @@ func queueForMatch() error {
 	}
 	curTicket = t
 
-	fmt.Println(fmt.Sprintf("queued up! \n%+v", curUser))
+	fmt.Println(fmt.Sprintf("queued up! \n%+v", curTicket))
 	return nil
 }

@@ -89,7 +89,12 @@ func (t *TicketQueue) CheckTickets(ctx context.Context, matchSize int) ([]string
 	// found match
 	if len(t.queue) >= matchSize {
 		out := t.queue[0:matchSize]
-		t.queue = t.queue[3:]
+
+		if len(t.queue) > matchSize {
+			t.queue = t.queue[matchSize:]
+		} else {
+			t.queue = []string{}
+		}
 
 		return out, nil
 	}

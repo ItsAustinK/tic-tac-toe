@@ -1,6 +1,7 @@
 package application
 
 import (
+	"P2/backend/game/application"
 	"P2/backend/matchmaking/database"
 	"P2/backend/matchmaking/database/repo"
 	"context"
@@ -10,14 +11,16 @@ import (
 )
 
 type MatchmakerApp struct {
-	db    repo.TicketStorer
-	queue repo.TicketQueuer
+	db      repo.TicketStorer
+	queue   repo.TicketQueuer
+	gameApp application.GameApp
 }
 
 func NewMatchmakerApp() MatchmakerApp {
 	return MatchmakerApp{
-		db:    repo.NewTicketDatabase(),
-		queue: repo.NewTicketQueue(),
+		db:      repo.NewTicketDatabase(),
+		queue:   repo.NewTicketQueue(),
+		gameApp: application.NewGameApp(),
 	}
 }
 
@@ -44,10 +47,25 @@ func (m MatchmakerApp) QueueForMatch(ctx context.Context, id string) (*database.
 		log.Print(fmt.Sprintf("something went wrong when checking for matches - err: %+v", err))
 	}
 
-	for i := range tickets {
-		if ticket.Id != tickets[i].Id {
-			ticket = *tickets[i]
-			break
+	if tickets != nil {
+		// get the updated ticket
+		for i := range tickets {
+			if ticket.Id != tickets[i].Id {
+				ticket = *tickets[i]
+				break
+			}
+		}
+
+		// create a game
+		g, err := m.gameApp.CreateGame(ctx, 3, 3, 3)
+		if err != nil {
+			return nil, err
+		}
+
+		ticket.GameId = g.Id
+		err = m.db.UpdateTicket(ctx, ticket)
+		if err != nil {
+			return nil, err
 		}
 	}
 

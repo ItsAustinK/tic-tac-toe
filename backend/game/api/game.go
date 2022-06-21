@@ -63,11 +63,9 @@ func GetGame(ctx context.Context, id string) (*Game, error) {
 	return dto, nil
 }
 
-func CreateGame(ctx context.Context, board Board) (*Game, error) {
-	item := board.ToDbItem()
-
+func CreateGame(ctx context.Context, r, c, k int) (*Game, error) {
 	app := application.NewGameApp()
-	g, err := app.CreateGame(ctx, item)
+	g, err := app.CreateGame(ctx, r, c, k)
 	if err != nil {
 		return nil, err
 	}

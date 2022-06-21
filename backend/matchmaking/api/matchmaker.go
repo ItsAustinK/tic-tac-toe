@@ -6,7 +6,7 @@ import (
 )
 
 func QueueForMatch(ctx context.Context, id string) (*Ticket, error) {
-	app := application.MatchmakerApp{}
+	app := application.NewMatchmakerApp()
 	t, err := app.QueueForMatch(ctx, id)
 	if err != nil {
 		return nil, err

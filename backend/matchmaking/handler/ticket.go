@@ -23,7 +23,7 @@ func (u TickerHandler) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
 		}
 
 		ticket, err := api.GetTicket(r.Context(), id)
-		if err == nil {
+		if err != nil {
 			http.WriteError(w, gohttp.StatusBadRequest, err)
 		}
 

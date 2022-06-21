@@ -30,7 +30,8 @@ func (g GameApp) GetGame(ctx context.Context, id string) (*database.Game, error)
 	return game, nil
 }
 
-func (g GameApp) CreateGame(ctx context.Context, board database.Board) (*database.Game, error) {
+func (g GameApp) CreateGame(ctx context.Context, r, c, k int) (*database.Game, error) {
+	board := database.NewBoard(r, c, k)
 	game := database.NewGame(board)
 	return &game, g.db.AddGame(ctx, game)
 }
