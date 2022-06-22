@@ -57,6 +57,10 @@ func readTerminalInput() {
 }
 
 func routeCommand(cmd string) {
+	if cmd[0] != '-' {
+		fmt.Print("invalid command")
+	}
+
 	if strings.Contains(cmd, "-users") {
 		err := printUserIds()
 		if err != nil {
@@ -64,25 +68,20 @@ func routeCommand(cmd string) {
 		}
 	} else if strings.Contains(cmd, "-login") {
 		split := strings.Split(cmd, "=")
-		if len(split) < 2 {
-			fmt.Println("invalid login cmd")
-			return
+
+		id := ""
+		if len(split) > 1 {
+			id = split[1]
+			id = strings.ReplaceAll(id, "\n", "")
+			id = strings.ReplaceAll(id, "\r", "")
 		}
 
-		id := split[1]
-		id = strings.ReplaceAll(id, "\n", "")
-		id = strings.ReplaceAll(id, "\r", "")
 		err := userLogin(id)
 		if err != nil {
 			panic(err)
 		}
 	} else if strings.Contains(cmd, "-queue") {
 		err := queueForMatch()
-		if err != nil {
-			panic(err)
-		}
-	} else if strings.Contains(cmd, "-game") {
-		err := getGame(curTicket.GameId)
 		if err != nil {
 			panic(err)
 		}
