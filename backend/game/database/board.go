@@ -41,6 +41,25 @@ func (b Board) AddAction(a Action) error {
 }
 
 func (b Board) IsBoardComplete() (string, bool) {
+	isFull := true
+	//winnerId := ""
+
+	// TODO: check for winner
+	for i := range b.Pieces {
+		for j := range b.Pieces[i] {
+			if b.IsPieceAvailable([2]int{i, j}) {
+				isFull = false
+			}
+		}
+	}
+
+	if isFull {
+		return "", true
+	}
+
+	//if winnerId != "" {
+	//	return winnerId, true
+	//}
 
 	return "", false
 }

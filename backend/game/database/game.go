@@ -20,6 +20,7 @@ const (
 	Initializing Status = "initializing"
 	InProgress   Status = "in_progress"
 	Complete     Status = "complete"
+	Tie          Status = "tie"
 )
 
 type Game struct {
@@ -112,14 +113,17 @@ func (g *Game) AddPlayerAction(a Action) error {
 	return g.Board.AddAction(a)
 }
 
-func (g *Game) IsGameOver() bool {
+func (g *Game) CheckForGameOver() {
 	winnerId, complete := g.Board.IsBoardComplete()
-	if !complete {
-		return false
+
+	// tie
+	if complete && winnerId == "" {
+		g.Status = Tie
+		return
 	}
 
 	g.WinnerIdx = g.getPlayerIdxById(winnerId)
-	return true
+	g.Status = Complete
 }
 
 func (g Game) getPlayerIdxById(id string) int {
