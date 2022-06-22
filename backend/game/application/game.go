@@ -100,11 +100,6 @@ func (g GameApp) MakePlayerAction(ctx context.Context, id, token string, action 
 		return nil, err
 	}
 
-	err = game.Board.AddAction(action)
-	if err != nil {
-		return nil, err
-	}
-
 	return game, g.db.UpdateGame(ctx, *game)
 }
 

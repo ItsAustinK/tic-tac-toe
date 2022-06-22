@@ -109,7 +109,7 @@ func (g *Game) AddPlayerAction(a Action) error {
 	t, _ := gonanoid.Nanoid(16)
 	g.Token = t
 
-	return nil
+	return g.Board.AddAction(a)
 }
 
 func (g *Game) IsGameOver() bool {

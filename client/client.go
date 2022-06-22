@@ -317,7 +317,6 @@ func joinGame(uid, gid string) error {
 	}
 
 	curGame = g
-	curGame.Init()
 	curGame.Render()
 
 	go getGameStatusLongPoll()
@@ -390,10 +389,15 @@ func getGame(id string) error {
 }
 
 func makeBoardAction(id, token string, location int) error {
-	row := location % curGame.Board.Row
-	col := location / curGame.Board.Col
+	if curGame.CurPlayerId != curUser.Id {
+		fmt.Println("not your turn yet!")
+		return nil
+	}
+
+	row := location / curGame.Board.Row
+	col := location % curGame.Board.Col
 	a := game.Action{
-		PlayerId: id,
+		PlayerId: curUser.Id,
 		Position: [2]int{row, col},
 	}
 
