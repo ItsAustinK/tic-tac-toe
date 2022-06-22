@@ -40,26 +40,54 @@ func (b Board) AddAction(a Action) error {
 	return nil
 }
 
-func (b Board) IsBoardComplete() (string, bool) {
-	isFull := true
-	//winnerId := ""
+// Ref: https://stackoverflow.com/questions/1056316/algorithm-for-determining-tic-tac-toe-game-over
+func (b Board) IsBoardComplete(a Action) bool {
+	//check col
+	for i := 0; i < b.Col; i++ {
+		if b.Pieces[a.Position[0]][i].PlayerId != a.PlayerId {
+			break
+		}
 
-	// TODO: check for winner
-	for i := range b.Pieces {
-		for j := range b.Pieces[i] {
-			if b.IsPieceAvailable([2]int{i, j}) {
-				isFull = false
+		if i == b.KVal-1 {
+			return true
+		}
+	}
+
+	//check row
+	for i := 0; i < b.Row; i++ {
+		if b.Pieces[i][a.Position[1]].PlayerId != a.PlayerId {
+			break
+		}
+
+		if i == b.KVal-1 {
+			return true
+		}
+	}
+
+	//check diag
+	if a.Position[0] == a.Position[1] {
+		//we're on a diagonal
+		for i, j := 0, 0; i < b.Row || j < b.Col; i, j = i+1, j+1 {
+			if b.Pieces[i][j].PlayerId != a.PlayerId {
+				break
+			}
+			if i == b.KVal-1 {
+				return true
 			}
 		}
 	}
 
-	if isFull {
-		return "", true
+	//check anti diag
+	if a.Position[0]+a.Position[1] == b.KVal-1 {
+		for i, j := 0, 0; i < b.Row && j < b.Col; i, j = i+1, j+1 {
+			if b.Pieces[i][(b.KVal-1)-j].PlayerId != a.PlayerId {
+				break
+			}
+			if i == b.KVal-1 {
+				return true
+			}
+		}
 	}
 
-	//if winnerId != "" {
-	//	return winnerId, true
-	//}
-
-	return "", false
+	return false
 }

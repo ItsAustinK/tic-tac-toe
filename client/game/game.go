@@ -18,6 +18,7 @@ const (
 	Initializing Status = "initializing"
 	InProgress   Status = "in_progress"
 	Complete     Status = "complete"
+	Tie          Status = "tie"
 )
 
 type Game struct {
@@ -34,12 +35,12 @@ type Game struct {
 
 func (g Game) Render() {
 	fmt.Print("\n")
-
 	fmt.Println(fmt.Sprintf("Game Id: %s", g.Id))
 	fmt.Println(fmt.Sprintf("Presence: %s", g.Presence))
 	fmt.Println(fmt.Sprintf("Status: %s", g.Status))
 	fmt.Println(fmt.Sprintf("Player's Turn: %s", g.CurPlayerId))
 	fmt.Println(fmt.Sprintf("Winner: %s", g.WinnerId))
+	fmt.Print("\n")
 
 	for i := range g.Board.Pieces {
 		for j := range g.Board.Pieces[i] {

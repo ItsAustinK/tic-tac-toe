@@ -100,7 +100,7 @@ func (g GameApp) MakePlayerAction(ctx context.Context, id, token string, action 
 		return nil, err
 	}
 
-	game.CheckForGameOver()
+	game.CheckForGameOver(action)
 
 	return game, g.db.UpdateGame(ctx, *game)
 }

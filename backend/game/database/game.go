@@ -113,16 +113,18 @@ func (g *Game) AddPlayerAction(a Action) error {
 	return g.Board.AddAction(a)
 }
 
-func (g *Game) CheckForGameOver() {
-	winnerId, complete := g.Board.IsBoardComplete()
+func (g *Game) CheckForGameOver(a Action) {
+	complete := g.Board.IsBoardComplete(a)
+	if !complete {
+		// check full board
+		if len(g.Actions) == (g.Board.Row * g.Board.Col) {
+			g.Status = Tie
+		}
 
-	// tie
-	if complete && winnerId == "" {
-		g.Status = Tie
 		return
 	}
 
-	g.WinnerIdx = g.getPlayerIdxById(winnerId)
+	g.WinnerIdx = g.getPlayerIdxById(a.PlayerId)
 	g.Status = Complete
 }
 

@@ -339,7 +339,7 @@ func getGameStatusLongPoll() {
 		return
 	}
 
-	if curGame.Status == string(game.Complete) {
+	if curGame.Status == string(game.Complete) || curGame.Status == string(game.Tie) {
 		fmt.Println("stopping game long polling -game is complete!")
 	} else {
 		go getGameStatusLongPoll()
